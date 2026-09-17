@@ -11,6 +11,7 @@
     background-color: #f4f4f9;
   }
 
+  /* 固定表示のコピーボタン */
   .copy-btn {
     position: fixed;
     top: 1rem;
@@ -121,9 +122,11 @@
 
 &lt;script&gt;
 // ===== 設定 =====
-const PAGE_ID    = '<input type="text" name="pageid" value="page">';
+const PAGE_ID    = '<input type="text" name="pageid" value="page1">';
 const PAGE_TITLE = '<input type="text" id="pagetitle-script-input" name="pagetitle" value="ページ 1">';
 const TOP_URL    = '../../index.html'; // トップページへの相対パス
+const INACTIVE_TIMEOUT_MS = 3 * 60 * 1000; // 3分
+let inactiveTimer = null;
 const IMAGES = [
 <div id="container" style="display: inline-block;">
   <button id="add-btn">入力欄を追加</button>
@@ -262,7 +265,13 @@ function setupVisibility() {
     if (!isAuthed()) return;
     if (document.hidden) {
       hideContent();
+      inactiveTimer = setTimeout(() =&gt; {
+        window.location.href = TOP_URL;
+      }, INACTIVE_TIMEOUT_MS);
     } else {
+      clearTimeout(inactiveTimer);
+      inactiveTimer = null;
+
       if (detectDevice() === 'ipad' &amp;&amp; !layoutOk()) {
         showGate('全画面で開いてください', layoutMessage());
         return;
