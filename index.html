@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サイトトップ</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0f0f0f;
+    color: #e8e8e8;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    padding: 2rem;
+  }
+
+  h1 {
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: #888;
+    margin-bottom: 3rem;
+  }
+
+  .pages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .page-btn {
+    background: none;
+    border: 1px solid #333;
+    color: #e8e8e8;
+    padding: 0.9rem 1.4rem;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+    border-radius: 4px;
+  }
+  .page-btn:hover { border-color: #888; background: #1a1a1a; }
+
+  /* モーダル */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-bg.open { display: flex; }
+
+  .modal {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .modal h2 { font-size: 0.95rem; font-weight: 400; color: #aaa; }
+
+  .modal input[type="password"] {
+    background: #0f0f0f;
+    border: 1px solid #444;
+    color: #e8e8e8;
+    padding: 0.7rem 0.9rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    width: 100%;
+    outline: none;
+  }
+  .modal input[type="password"]:focus { border-color: #888; }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+
+  .btn-cancel {
+    background: none;
+    border: 1px solid #444;
+    color: #888;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .btn-cancel:hover { border-color: #888; }
+
+  .btn-ok {
+    background: #e8e8e8;
+    border: none;
+    color: #0f0f0f;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .btn-ok:hover { background: #fff; }
+
+  .error-msg {
+    color: #e05555;
+    font-size: 0.85rem;
+    min-height: 1.2em;
+  }
+</style>
+</head>
+<body>
+
+<h1>ページ一覧</h1>
+
+<div class="pages" id="pageList">
+  <!-- ===== ボタンはここに追加 =====
+       data-page="フォルダ名" が password.json のキーと一致している必要があります
+       表示名はボタンのテキストを変えるだけ -->
+  <button class="page-btn" data-page="page1">ページ 1</button>
+  <button class="page-btn" data-page="page2">ページ 2</button>
+  <!-- ============================= -->
+</div>
+
+<!-- パスワードモーダル -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">パスワードを入力</h2>
+    <input type="password" id="pwInput" placeholder="password" autocomplete="off">
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnCancel">キャンセル</button>
+      <button class="btn-ok" id="btnOk">開く</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PASSWORDS_URL = './password.json'; // password.json の場所
+
+let passwords = {};
+let targetPage = '';
+
+// password.json を事前ロード
+fetch(PASSWORDS_URL)
+  .then(r => r.json())
+  .then(data => { passwords = data; })
+  .catch(() => console.error('password.json の読み込みに失敗しました'));
+
+// ボタンクリック → モーダルを開く
+document.getElementById('pageList').addEventListener('click', e => {
+  const btn = e.target.closest('.page-btn');
+  if (!btn) return;
+  targetPage = btn.dataset.page;
+  document.getElementById('modalTitle').textContent = `${btn.textContent.trim()} — パスワード`;
+  document.getElementById('pwInput').value = '';
+  document.getElementById('errorMsg').textContent = '';
+  document.getElementById('modalBg').classList.add('open');
+  setTimeout(() => document.getElementById('pwInput').focus(), 50);
+});
+
+// OK → 照合
+document.getElementById('btnOk').addEventListener('click', tryOpen);
+document.getElementById('pwInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryOpen();
+});
+
+function tryOpen() {
+  const input = document.getElementById('pwInput').value;
+  if (passwords[targetPage] === undefined) {
+    document.getElementById('errorMsg').textContent = 'このページは存在しません';
+    return;
+  }
+  if (input === passwords[targetPage]) {
+    // sessionStorage にトークンを保存してからサブページを開く
+    sessionStorage.setItem(`auth_${targetPage}`, '1');
+    window.open(`./sub/${targetPage}/page.html`, '_blank');
+    closeModal();
+  } else {
+    document.getElementById('errorMsg').textContent = 'パスワードが違います';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+// キャンセル
+document.getElementById('btnCancel').addEventListener('click', closeModal);
+document.getElementById('modalBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalBg')) closeModal();
+});
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+  targetPage = '';
+}
+</script>
+</body>
+</html>

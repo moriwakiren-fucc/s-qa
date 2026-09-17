@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ページ 1</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f0f0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    min-height: 100vh;
+
+    /* 長押し・選択禁止 */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  #gate {
+    color: #e8e8e8;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    gap: 1rem;
+  }
+  #gate p { color: #888; font-size: 0.9rem; }
+
+  #content { width: 100%; max-width: 800px; display: none; }
+
+  .img-wrap {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    position: relative;
+    /* スクリーンショット対策：mix-blend-mode などは効果がないので割り切り */
+  }
+
+  .img-wrap img {
+    width: 100%;
+    display: block;
+    pointer-events: none; /* クリック・長押しイベントを無効化 */
+    -webkit-user-drag: none;
+    draggable: false;
+  }
+
+  /* 印刷・PDF化で画像を非表示 */
+  @media print {
+    #content { display: none !important; }
+    #gate { display: flex !important; }
+    #gate p::before { content: 'このページは印刷できません'; color: #333; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 認証前 / 非アクティブ時に表示するゲート画面 -->
+<div id="gate">
+  <p>認証中...</p>
+</div>
+
+<!-- 認証後に表示するコンテンツ -->
+<div id="content" id="imageArea">
+  <!-- ===== 画像リストをここに追加 =====
+       同じフォルダに画像を置いて、ファイル名を配列に追加するだけ -->
+</div>
+
+<script>
+// ===== 設定 =====
+const PAGE_ID = 'page1';        // このページの ID（password.json のキーと一致させる）
+const PAGE_TITLE = 'ページ 1'; // タイトル表示用
+const IMAGES = [
+  '01.jpg',
+  '02.jpg',
+  '03.jpg',
+  // ← ここにファイル名を追加するだけ
+];
+// ================
+
+const gate = document.getElementById('gate');
+const content = document.getElementById('content');
+
+// ---- 認証チェック ----
+function isAuthed() {
+  // opener（index.html）経由で開かれた場合は opener の sessionStorage を参照
+  try {
+    if (window.opener && window.opener.sessionStorage.getItem(`auth_${PAGE_ID}`) === '1') return true;
+  } catch(_) {}
+  // 同一オリジンの自身の sessionStorage も確認（リロード対策）
+  return sessionStorage.getItem(`auth_${PAGE_ID}`) === '1';
+}
+
+function showContent() {
+  // 画像を動的に生成
+  IMAGES.forEach(filename => {
+    const wrap = document.createElement('div');
+    wrap.className = 'img-wrap';
+    const img = document.createElement('img');
+    img.src = filename;
+    img.alt = '';
+    img.draggable = false;
+    wrap.appendChild(img);
+    content.appendChild(wrap);
+  });
+
+  document.title = PAGE_TITLE;
+  gate.style.display = 'none';
+  content.style.display = 'block';
+  // 自身の sessionStorage にも保存（同タブリロード対策）
+  sessionStorage.setItem(`auth_${PAGE_ID}`, '1');
+}
+
+function showGate(msg) {
+  gate.querySelector('p').textContent = msg;
+  gate.style.display = 'flex';
+  content.style.display = 'none';
+}
+
+// ---- 初期表示 ----
+if (isAuthed()) {
+  showContent();
+} else {
+  showGate('アクセスするにはトップページからパスワードを入力してください');
+}
+
+// ---- Page Visibility API：非アクティブ時に画像を隠す ----
+document.addEventListener('visibilitychange', () => {
+  if (!isAuthed()) return;
+  if (document.hidden) {
+    // タブが非表示 → コンテンツを隠してゲートを表示
+    content.style.display = 'none';
+    gate.style.display = 'flex';
+    gate.querySelector('p').textContent = 'ページを前面に表示すると再表示されます';
+  } else {
+    // 再びアクティブ → コンテンツを戻す
+    content.style.display = 'block';
+    gate.style.display = 'none';
+  }
+});
+
+// ---- 右クリック禁止 ----
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---- キーボードショートカット無効化（PrintScreen等は防げないが一応） ----
+document.addEventListener('keydown', e => {
+  // Ctrl+S, Ctrl+P, Ctrl+U など
+  if (e.ctrlKey && ['s','p','u','a'].includes(e.key.toLowerCase())) e.preventDefault();
+  // F12
+  if (e.key === 'F12') e.preventDefault();
+});
+</script>
+</body>
+</html>
