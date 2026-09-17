@@ -77,6 +77,9 @@ const PAGE_ID    = 'page1';
 const PAGE_TITLE = 'ページ 1';
 const TOP_URL    = '../../index.html'; // トップページへの相対パス
 const IMAGES = [
+<div id="container">
+  <button id="add-btn">入力欄を追加</button>
+</div>
   '01.jpg',
   '02.jpg',
   '03.jpg',
@@ -255,3 +258,20 @@ document.addEventListener('keydown', e =&gt; {
 &lt;/html&gt;
   </code>
 </pre>
+<script>
+// ボタンと追加先の要素を取得する
+const addBtn = document.getElementById('add-btn');
+const container = document.getElementById('container');
+
+// ボタンがクリックされたときの処理
+addBtn.addEventListener('click', () => {
+  // 新しく input 要素を作成する
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = '追加された入力欄';
+
+  // container の末尾に input 要素を追加する
+  container.appendChild(input);
+});
+
+</script>
