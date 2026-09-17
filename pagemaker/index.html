@@ -1,1 +1,257 @@
+<pre>
+  <code>
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ja&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;title&gt;ページ 1&lt;/title&gt;
+&lt;style&gt;
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  body {
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    min-height: 100vh;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  #gate {
+    color: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    gap: 0.75rem;
+    text-align: center;
+    padding: 2rem;
+  }
+  #gate .gate-title {
+    font-size: 1rem;
+    color: #111;
+    font-weight: 500;
+  }
+  #gate .gate-sub {
+    font-size: 0.85rem;
+    color: #999;
+  }
+
+  #content { width: 100%; max-width: 800px; display: none; }
+
+  .canvas-wrap {
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+  .canvas-wrap canvas {
+    width: 100%;
+    display: block;
+    pointer-events: none;
+  }
+
+  @media print {
+    #content { display: none !important; }
+    #gate { display: flex !important; min-height: auto; }
+    #gate .gate-title { color: #333; }
+  }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;div id=&quot;gate&quot;&gt;
+  &lt;p class=&quot;gate-title&quot;&gt;認証中...&lt;/p&gt;
+  &lt;p class=&quot;gate-sub&quot;&gt;&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;content&quot;&gt;&lt;/div&gt;
+
+&lt;script&gt;
+// ===== 設定 =====
+const PAGE_ID    = 'page1';
+const PAGE_TITLE = 'ページ 1';
+const TOP_URL    = '../../index.html'; // トップページへの相対パス
+const IMAGES = [
+  '01.jpg',
+  '02.jpg',
+  '03.jpg',
+  // ← ここにファイル名を追加するだけ
+];
+// ================
+
+const gate    = document.getElementById('gate');
+const content = document.getElementById('content');
+const gateTitle = gate.querySelector('.gate-title');
+const gateSub   = gate.querySelector('.gate-sub');
+
+// ---- デバイス判定 ----
+function detectDevice() {
+  const ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iphone';
+  if (navigator.maxTouchPoints &gt; 1 &amp;&amp; !/Macintosh/.test(ua)) return 'ipad';
+  return 'mac';
+}
+
+// ---- iPad 分割ウィンドウ検出 ----
+// screen.width/height でiPad 16A（1180×820）かを確認
+// window.innerWidth が screen.width の90%未満なら分割とみなす
+function checkIpadLayout() {
+  const sw = screen.width, sh = screen.height;
+  const isIpad16A = (sw === 1180 &amp;&amp; sh === 820) || (sw === 820 &amp;&amp; sh === 1180);
+  if (!isIpad16A) return { ok: false, reason: '対応していないデバイスです' };
+  const isSplit = window.innerWidth &lt; screen.width * 0.9;
+  if (isSplit) return { ok: false, reason: '全画面で開いてください' };
+  return { ok: true };
+}
+
+// ---- レイアウトチェック（iPadのみ） ----
+function layoutOk() {
+  const device = detectDevice();
+  if (device === 'iphone' || device === 'mac') return true; // チェックなし
+  const result = checkIpadLayout();
+  return result.ok;
+}
+
+function layoutMessage() {
+  const result = checkIpadLayout();
+  return result.reason || '全画面で開いてください';
+}
+
+// ---- 認証チェック ----
+function isAuthed() {
+  try {
+    if (window.opener &amp;&amp; window.opener.sessionStorage.getItem(`auth_${PAGE_ID}`) === '1') return true;
+  } catch(_) {}
+  return sessionStorage.getItem(`auth_${PAGE_ID}`) === '1';
+}
+
+// ---- Canvas で画像描画 ----
+function drawImageToCanvas(src) {
+  return new Promise(resolve =&gt; {
+    const wrap = document.createElement('div');
+    wrap.className = 'canvas-wrap';
+    const canvas = document.createElement('canvas');
+    const img = new Image();
+    img.onload = () =&gt; {
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      wrap.appendChild(canvas);
+      content.appendChild(wrap);
+      resolve();
+    };
+    img.onerror = () =&gt; resolve(); // 読み込み失敗はスキップ
+    img.src = src;
+  });
+}
+
+async function showContent() {
+  document.title = PAGE_TITLE;
+  sessionStorage.setItem(`auth_${PAGE_ID}`, '1');
+
+  for (const filename of IMAGES) {
+    await drawImageToCanvas(filename);
+  }
+
+  gate.style.display    = 'none';
+  content.style.display = 'block';
+}
+
+function showGate(title, sub = '') {
+  gateTitle.textContent = title;
+  gateSub.textContent   = sub;
+  gate.style.display    = 'flex';
+  content.style.display = 'none';
+}
+
+function hideContent() {
+  // 非表示時はCanvasをクリアして内容を消す
+  content.querySelectorAll('canvas').forEach(c =&gt; {
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, c.width, c.height);
+  });
+  showGate('前面に戻すと再表示されます');
+}
+
+async function restoreContent() {
+  // 再描画
+  content.querySelectorAll('.canvas-wrap').forEach(w =&gt; w.remove());
+  for (const filename of IMAGES) {
+    await drawImageToCanvas(filename);
+  }
+  gate.style.display    = 'none';
+  content.style.display = 'block';
+}
+
+// ---- 初期表示 ----
+(async () =&gt; {
+  if (!isAuthed()) {
+    // 認証なし → トップへ自動遷移
+    showGate('認証されていません', 'トップページへ移動します...');
+    setTimeout(() =&gt; { window.location.href = TOP_URL; }, 1500);
+    return;
+  }
+
+  const device = detectDevice();
+  if (device === 'ipad' &amp;&amp; !layoutOk()) {
+    showGate('全画面で開いてください', layoutMessage());
+    // リサイズ監視（分割を解除したら自動で表示）
+    window.addEventListener('resize', async () =&gt; {
+      if (layoutOk()) {
+        await showContent();
+        setupVisibility();
+      }
+    });
+    return;
+  }
+
+  await showContent();
+  setupVisibility();
+})();
+
+// ---- Page Visibility API ----
+function setupVisibility() {
+  document.addEventListener('visibilitychange', async () =&gt; {
+    if (!isAuthed()) return;
+    if (document.hidden) {
+      hideContent();
+    } else {
+      if (detectDevice() === 'ipad' &amp;&amp; !layoutOk()) {
+        showGate('全画面で開いてください', layoutMessage());
+        return;
+      }
+      await restoreContent();
+    }
+  });
+
+  // iPad: リサイズで分割検出（visibilitychange 後もカバー）
+  if (detectDevice() === 'ipad') {
+    window.addEventListener('resize', () =&gt; {
+      if (!isAuthed()) return;
+      if (!document.hidden &amp;&amp; !layoutOk()) {
+        hideContent();
+        showGate('全画面で開いてください', layoutMessage());
+      }
+    });
+  }
+}
+
+// ---- 右クリック禁止 ----
+document.addEventListener('contextmenu', e =&gt; e.preventDefault());
+
+// ---- キーボードショートカット無効化 ----
+document.addEventListener('keydown', e =&gt; {
+  if (e.ctrlKey &amp;&amp; ['s','p','u','a'].includes(e.key.toLowerCase())) e.preventDefault();
+  if (e.key === 'F12') e.preventDefault();
+});
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+  </code>
+</pre>
