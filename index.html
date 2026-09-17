@@ -13,8 +13,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #0f0f0f;
-    color: #e8e8e8;
+    background: #fff;
+    color: #111;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     padding: 2rem;
   }
@@ -23,7 +23,7 @@
     font-size: 1.1rem;
     font-weight: 400;
     letter-spacing: 0.08em;
-    color: #888;
+    color: #999;
     margin-bottom: 3rem;
   }
 
@@ -37,8 +37,8 @@
 
   .page-btn {
     background: none;
-    border: 1px solid #333;
-    color: #e8e8e8;
+    border: 1px solid #ccc;
+    color: #111;
     padding: 0.9rem 1.4rem;
     font-size: 1rem;
     cursor: pointer;
@@ -46,13 +46,13 @@
     transition: border-color 0.15s, background 0.15s;
     border-radius: 4px;
   }
-  .page-btn:hover { border-color: #888; background: #1a1a1a; }
+  .page-btn:hover { border-color: #888; background: #f5f5f5; }
 
   /* モーダル */
   .modal-bg {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.75);
+    background: rgba(0,0,0,0.3);
     align-items: center;
     justify-content: center;
     z-index: 100;
@@ -60,8 +60,8 @@
   .modal-bg.open { display: flex; }
 
   .modal {
-    background: #1a1a1a;
-    border: 1px solid #333;
+    background: #fff;
+    border: 1px solid #ddd;
     border-radius: 6px;
     padding: 2rem;
     width: 90%;
@@ -69,14 +69,15 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
   }
 
-  .modal h2 { font-size: 0.95rem; font-weight: 400; color: #aaa; }
+  .modal h2 { font-size: 0.95rem; font-weight: 400; color: #666; }
 
   .modal input[type="password"] {
-    background: #0f0f0f;
-    border: 1px solid #444;
-    color: #e8e8e8;
+    background: #fafafa;
+    border: 1px solid #ccc;
+    color: #111;
     padding: 0.7rem 0.9rem;
     font-size: 1rem;
     border-radius: 4px;
@@ -93,7 +94,7 @@
 
   .btn-cancel {
     background: none;
-    border: 1px solid #444;
+    border: 1px solid #ccc;
     color: #888;
     padding: 0.6rem 1rem;
     border-radius: 4px;
@@ -103,19 +104,19 @@
   .btn-cancel:hover { border-color: #888; }
 
   .btn-ok {
-    background: #e8e8e8;
+    background: #111;
     border: none;
-    color: #0f0f0f;
+    color: #fff;
     padding: 0.6rem 1.2rem;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9rem;
     font-weight: 600;
   }
-  .btn-ok:hover { background: #fff; }
+  .btn-ok:hover { background: #333; }
 
   .error-msg {
-    color: #e05555;
+    color: #c0392b;
     font-size: 0.85rem;
     min-height: 1.2em;
   }
@@ -148,18 +149,16 @@
 </div>
 
 <script>
-const PASSWORDS_URL = './password.json'; // password.json の場所
+const PASSWORDS_URL = './password.json';
 
 let passwords = {};
 let targetPage = '';
 
-// password.json を事前ロード
 fetch(PASSWORDS_URL)
   .then(r => r.json())
   .then(data => { passwords = data; })
   .catch(() => console.error('password.json の読み込みに失敗しました'));
 
-// ボタンクリック → モーダルを開く
 document.getElementById('pageList').addEventListener('click', e => {
   const btn = e.target.closest('.page-btn');
   if (!btn) return;
@@ -171,7 +170,6 @@ document.getElementById('pageList').addEventListener('click', e => {
   setTimeout(() => document.getElementById('pwInput').focus(), 50);
 });
 
-// OK → 照合
 document.getElementById('btnOk').addEventListener('click', tryOpen);
 document.getElementById('pwInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') tryOpen();
@@ -184,7 +182,6 @@ function tryOpen() {
     return;
   }
   if (input === passwords[targetPage]) {
-    // sessionStorage にトークンを保存してからサブページを開く
     sessionStorage.setItem(`auth_${targetPage}`, '1');
     window.open(`./sub/${targetPage}/page.html`, '_blank');
     closeModal();
@@ -195,7 +192,6 @@ function tryOpen() {
   }
 }
 
-// キャンセル
 document.getElementById('btnCancel').addEventListener('click', closeModal);
 document.getElementById('modalBg').addEventListener('click', e => {
   if (e.target === document.getElementById('modalBg')) closeModal();
