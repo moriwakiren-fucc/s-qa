@@ -5,7 +5,7 @@
 &lt;head&gt;
 &lt;meta charset=&quot;UTF-8&quot;&gt;
 &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
-&lt;title&gt;ページ 1&lt;/title&gt;
+&lt;title&gt;<input type="text" name="pagetitle" value="ページ"> 1&lt;/title&gt;
 &lt;style&gt;
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -73,17 +73,13 @@
 
 &lt;script&gt;
 // ===== 設定 =====
-const PAGE_ID    = 'page1';
-const PAGE_TITLE = 'ページ 1';
+const PAGE_ID    = <input type="text" name="pageid" value="page">;
+const PAGE_TITLE = <input type="text" name="pagetitle" value="ページ">;
 const TOP_URL    = '../../index.html'; // トップページへの相対パス
 const IMAGES = [
 <div id="container">
   <button id="add-btn">入力欄を追加</button>
 </div>
-  '01.jpg',
-  '02.jpg',
-  '03.jpg',
-  // ← ここにファイル名を追加するだけ
 ];
 // ================
 
@@ -259,19 +255,27 @@ document.addEventListener('keydown', e =&gt; {
   </code>
 </pre>
 <script>
-// ボタンと追加先の要素を取得する
 const addBtn = document.getElementById('add-btn');
 const container = document.getElementById('container');
 
-// ボタンがクリックされたときの処理
 addBtn.addEventListener('click', () => {
-  // 新しく input 要素を作成する
+  // 1. 現在画面にある input 要素の数を取得する
+  const currentInputCount = container.querySelectorAll('input').length;
+  const nextNumber = currentInputCount + 1;
+
+  // 2. 数値を2桁の0埋め（文字列）に変換する（例: 2 -> "02"）
+  const paddedNumber = String(nextNumber).padStart(2, '0');
+
+  // 3. 新しい input 要素を作成する
   const input = document.createElement('input');
   input.type = 'text';
-  input.placeholder = '追加された入力欄';
+  input.value = `${paddedNumber}.jpeg,`; // 初期値を設定
 
-  // container の末尾に input 要素を追加する
-  container.appendChild(input);
+  // 4. 縦並びにするために、inputを包む div を作成する
+  const wrapperDiv = document.createElement('div');
+  wrapperDiv.appendChild(input);
+
+  // 5. 画面（container）に追加する
+  container.appendChild(wrapperDiv);
 });
-
 </script>
