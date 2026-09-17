@@ -11,7 +11,6 @@
     background-color: #f4f4f9;
   }
 
-  /* 固定表示のコピーボタン */
   .copy-btn {
     position: fixed;
     top: 1rem;
@@ -54,7 +53,7 @@
 &lt;head&gt;
 &lt;meta charset=&quot;UTF-8&quot;&gt;
 &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
-&lt;title&gt;<input type="text" name="pagetitle" value="ページ 1">&lt;/title&gt;
+&lt;title&gt;<input type="text" id="title-input" name="pagetitle" value="ページ 1">&lt;/title&gt;
 &lt;style&gt;
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -123,7 +122,7 @@
 &lt;script&gt;
 // ===== 設定 =====
 const PAGE_ID    = '<input type="text" name="pageid" value="page">';
-const PAGE_TITLE = document.title;
+const PAGE_TITLE = '<input type="text" id="pagetitle-script-input" name="pagetitle" value="ページ 1">';
 const TOP_URL    = '../../index.html'; // トップページへの相対パス
 const IMAGES = [
 <div id="container" style="display: inline-block;">
@@ -297,6 +296,17 @@ document.addEventListener('keydown', e =&gt; {
 </code></pre>
 
 <script>
+// タイトル入力欄の連動（<title>側を変更したらscript側も自動更新）
+const titleInput = document.getElementById('title-input');
+const scriptTitleInput = document.getElementById('pagetitle-script-input');
+
+titleInput.addEventListener('input', (e) => {
+  scriptTitleInput.value = e.target.value;
+});
+scriptTitleInput.addEventListener('input', (e) => {
+  titleInput.value = e.target.value;
+});
+
 // --- 動的入力欄追加ロジック ---
 const addBtn = document.getElementById('add-btn');
 const container = document.getElementById('container');
@@ -319,18 +329,16 @@ addBtn.addEventListener('click', () => {
 // --- コピー機能ロジック ---
 document.getElementById('copy-code-btn').addEventListener('click', () => {
   const codeBlock = document.getElementById('code-block');
-  
-  // クローンを作成して、input の値をテキストとして展開
   const clone = codeBlock.cloneNode(true);
   
-  // input 要素をその入力値（文字列）に置き換える
+  // input 要素をその入力値に置き換える
   const inputs = clone.querySelectorAll('input');
   inputs.forEach(input => {
     const textNode = document.createTextNode(input.value);
     input.parentNode.replaceChild(textNode, input);
   });
 
-  // ボタン要素（「入力欄を追加」など）を除外
+  // ボタン要素を除外
   const buttons = clone.querySelectorAll('button');
   buttons.forEach(btn => btn.remove());
 
